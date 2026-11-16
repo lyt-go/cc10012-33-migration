@@ -48,6 +48,16 @@ export function saveRows(key: string, rows: EntryRow[]): void {
   }
 }
 
+// 多键原子提交：一次 setItem 同时落盘多个模块，是分享迁移这类跨模块写入的唯一提交点。
+// 中断只会发生在提交前（旧数据完整）或提交后（新数据完整），不会留下写了一半的中间态。
+export function saveModules(patch: Record<string, EntryRow[]>): void {
+  const next = { ...allRows(), ...patch }
+  cache = next
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  }
+}
+
 export function resetRows(key: string): EntryRow[] {
   const rows = clone(SEED_ROWS[key] ?? [])
   saveRows(key, rows)
